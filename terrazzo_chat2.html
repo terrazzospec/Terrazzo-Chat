@@ -1,0 +1,1003 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#111110">
+<title>Terrazzo Chat</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#111110;--s1:#1c1c1a;--s2:#252522;--s3:#2e2e2a;
+  --acc:#d4a843;--acc2:#e8c068;
+  --txt:#f0ede4;--txt2:#9a9890;--txt3:#5a5a55;
+  --brd:#333330;--brd2:#444440;
+  --red:#c0392b;--grn:#4caf72;
+  --r:12px;--rr:20px;
+  --fh:'Syne',sans-serif;--fb:'DM Sans',sans-serif;--fm:'DM Mono',monospace;
+}
+html,body{height:100%;background:var(--bg);color:var(--txt);font-family:var(--fb);overflow:hidden;font-size:15px}
+
+/* AUTH */
+#auth{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--bg);padding:2rem;z-index:200}
+.auth-logo{font-family:var(--fh);font-size:2.6rem;font-weight:800;color:var(--acc);letter-spacing:-2px;margin-bottom:.2rem}
+.auth-sub{color:var(--txt3);font-size:.72rem;letter-spacing:2.5px;text-transform:uppercase;margin-bottom:3rem;font-family:var(--fm)}
+.auth-card{background:var(--s1);border:1px solid var(--brd);border-radius:var(--rr);padding:1.5rem;width:100%;max-width:340px;display:flex;flex-direction:column;gap:12px}
+.auth-card h2{font-family:var(--fh);font-size:1.1rem;font-weight:700;color:var(--txt)}
+select,input[type=password],input[type=text],textarea{background:var(--s2);border:1px solid var(--brd);color:var(--txt);border-radius:10px;padding:12px 14px;font-size:.9rem;font-family:var(--fb);outline:none;width:100%;transition:border-color .2s}
+select:focus,input:focus,textarea:focus{border-color:var(--acc)}
+select option{background:var(--s2)}
+.btn{background:var(--acc);color:#111;border:none;border-radius:10px;padding:13px;font-size:.9rem;font-weight:500;font-family:var(--fb);cursor:pointer;transition:background .15s,transform .1s;width:100%}
+.btn:active{transform:scale(.98)}
+.btn-ghost{background:transparent;color:var(--txt2);border:1px solid var(--brd);border-radius:10px;padding:10px 16px;font-size:.85rem;font-family:var(--fb);cursor:pointer;transition:background .15s,color .15s}
+.btn-ghost:hover{background:var(--s3);color:var(--txt)}
+.err-msg{color:#e07070;font-size:.78rem;text-align:center;min-height:16px}
+.status-msg{color:var(--txt3);font-size:.78rem;text-align:center;min-height:16px;font-family:var(--fm)}
+
+/* SHELL */
+#shell{display:none;height:100vh;height:100dvh;flex-direction:row}
+
+/* SIDEBAR */
+#sidebar{width:72px;background:var(--s1);border-right:1px solid var(--brd);display:flex;flex-direction:column;align-items:center;padding:12px 0;gap:6px;flex-shrink:0;transition:width .25s ease;overflow:hidden;z-index:10}
+#sidebar.open{width:240px}
+.sb-logo{font-family:var(--fh);font-size:1.2rem;font-weight:800;color:var(--acc);letter-spacing:-1px;padding:8px 0 12px;white-space:nowrap;width:100%;text-align:center}
+.sb-section{font-size:.62rem;font-family:var(--fm);color:var(--txt3);letter-spacing:1.5px;text-transform:uppercase;padding:8px 0 4px 16px;width:100%;opacity:0;transition:opacity .2s;white-space:nowrap}
+#sidebar.open .sb-section{opacity:1}
+.sb-btn{width:100%;display:flex;align-items:center;gap:10px;padding:9px 14px;border-radius:10px;cursor:pointer;background:none;border:none;color:var(--txt2);font-family:var(--fb);font-size:.85rem;transition:background .15s,color .15s;white-space:nowrap;overflow:hidden}
+.sb-btn:hover{background:var(--s2);color:var(--txt)}
+.sb-btn.active{background:var(--s3);color:var(--acc)}
+.sb-icon{font-size:1.1rem;flex-shrink:0;width:24px;text-align:center}
+.sb-label{opacity:0;transition:opacity .2s;flex:1;overflow:hidden;text-overflow:ellipsis}
+#sidebar.open .sb-label{opacity:1}
+.sb-badge{background:var(--acc);color:#111;border-radius:10px;font-size:.6rem;font-weight:700;font-family:var(--fm);padding:1px 5px;margin-left:auto;flex-shrink:0;display:none}
+.sb-badge.show{display:block}
+#sidebar.open .sb-badge{display:block}
+.sb-divider{width:40px;height:1px;background:var(--brd);flex-shrink:0;margin:4px 0}
+#sidebar.open .sb-divider{width:calc(100% - 28px)}
+.sb-user{margin-top:auto;width:100%;display:flex;align-items:center;gap:10px;padding:10px 14px;border-top:1px solid var(--brd);overflow:hidden}
+.sb-user-info{opacity:0;transition:opacity .2s;flex:1;min-width:0}
+#sidebar.open .sb-user-info{opacity:1}
+.sb-uname{font-size:.85rem;font-weight:500;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sb-urole{font-size:.68rem;color:var(--txt3);font-family:var(--fm)}
+.logout-sb{background:none;border:none;color:var(--txt3);cursor:pointer;font-size:.85rem;padding:4px;flex-shrink:0;opacity:0;transition:opacity .2s}
+#sidebar.open .logout-sb{opacity:1}
+.conn-dot{width:8px;height:8px;border-radius:50%;background:var(--grn);flex-shrink:0}
+.conn-dot.off{background:var(--red)}
+.conn-dot.wait{background:var(--acc);animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* MAIN */
+#main{flex:1;display:flex;flex-direction:column;min-width:0;overflow:hidden}
+.view{display:none;flex-direction:column;flex:1;overflow:hidden}
+.view.active{display:flex}
+
+/* HOME */
+#view-home{padding:1.5rem;overflow-y:auto;gap:1rem}
+.home-hdr{font-family:var(--fh);font-size:1.8rem;font-weight:800;color:var(--txt);letter-spacing:-1px}
+.home-sub{color:var(--txt2);font-size:.85rem}
+.home-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:10px;margin-top:.5rem}
+.proj-card{background:var(--s1);border:1px solid var(--brd);border-radius:var(--r);padding:14px;cursor:pointer;transition:background .15s,border-color .15s;display:flex;flex-direction:column;gap:8px}
+.proj-card:hover{background:var(--s2);border-color:var(--brd2)}
+.proj-icon{font-size:1.5rem}
+.proj-name{font-size:.9rem;font-weight:500;color:var(--txt)}
+.proj-meta{font-size:.72rem;color:var(--txt3);font-family:var(--fm)}
+.unread-dot{display:inline-block;background:var(--acc);color:#111;border-radius:10px;font-size:.62rem;font-weight:700;font-family:var(--fm);padding:1px 7px;width:fit-content}
+.new-proj-card{background:transparent;border:1px dashed var(--brd2);border-radius:var(--r);padding:14px;cursor:pointer;transition:background .15s,border-color .15s;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--txt3);font-size:.85rem;min-height:100px}
+.new-proj-card:hover{background:var(--s1);border-color:var(--acc);color:var(--acc)}
+
+/* CHAT */
+.chat-hdr{background:var(--s1);border-bottom:1px solid var(--brd);padding:12px 16px;display:flex;align-items:center;gap:12px;flex-shrink:0}
+.chat-back{background:none;border:none;color:var(--txt2);font-size:1.2rem;cursor:pointer;padding:2px 8px;border-radius:8px}
+.chat-hdr-info{flex:1;min-width:0}
+.chat-hdr-name{font-size:1rem;font-weight:500;color:var(--txt);font-family:var(--fh)}
+.chat-hdr-sub{font-size:.7rem;color:var(--txt3);font-family:var(--fm)}
+.icon-btn{background:none;border:none;color:var(--txt2);font-size:1rem;cursor:pointer;width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;transition:background .15s,color .15s}
+.icon-btn:hover{background:var(--s2);color:var(--txt)}
+
+#messages{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:1px}
+#messages::-webkit-scrollbar{width:3px}
+#messages::-webkit-scrollbar-thumb{background:var(--brd2);border-radius:2px}
+
+.msg-date-sep{text-align:center;font-size:.68rem;color:var(--txt3);font-family:var(--fm);padding:10px 0 4px;letter-spacing:.5px}
+.msg-row{display:flex;align-items:flex-end;gap:8px;padding:1px 0;margin-bottom:3px}
+.msg-row.own{flex-direction:row-reverse}
+.msg-av{width:28px;height:28px;border-radius:50%;background:var(--s3);color:var(--acc);font-size:.65rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:var(--fh)}
+.msg-av.hidden{visibility:hidden}
+.msg-wrap{display:flex;flex-direction:column;max-width:75%;gap:1px}
+.msg-row.own .msg-wrap{align-items:flex-end}
+.msg-sender-name{font-size:.68rem;color:var(--txt3);padding:0 10px 2px;font-family:var(--fm)}
+.msg-bubble{background:var(--s2);border-radius:16px;padding:9px 13px;font-size:.9rem;line-height:1.5;color:var(--txt);word-break:break-word;white-space:pre-wrap;border:1px solid var(--brd);border-bottom-left-radius:4px}
+.msg-row.own .msg-bubble{background:var(--acc);color:#111;border-color:transparent;border-bottom-right-radius:4px;border-bottom-left-radius:16px}
+.msg-bubble img{max-width:100%;border-radius:10px;display:block;margin-top:4px;max-height:220px;object-fit:cover;cursor:pointer}
+.msg-file{display:flex;align-items:center;gap:8px;background:rgba(0,0,0,.18);border-radius:8px;padding:7px 10px;margin-top:5px;cursor:pointer}
+.msg-fname{font-size:.78rem;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:150px}
+.msg-fsize{font-size:.68rem;opacity:.55;font-family:var(--fm)}
+.msg-time{font-size:.62rem;color:var(--txt3);padding:2px 10px;font-family:var(--fm)}
+.msg-row.own .msg-time{text-align:right}
+.sys-msg{text-align:center;font-size:.72rem;color:var(--txt3);font-style:italic;padding:4px 0 8px;font-family:var(--fm)}
+.typing-row{display:flex;align-items:center;gap:8px;padding:2px 12px 6px;color:var(--txt3);font-size:.76rem;font-style:italic;min-height:24px}
+.dots span{width:5px;height:5px;background:var(--txt3);border-radius:50%;display:inline-block;animation:blink 1.2s infinite;margin:0 1px}
+.dots span:nth-child(2){animation-delay:.2s}
+.dots span:nth-child(3){animation-delay:.4s}
+@keyframes blink{0%,80%,100%{opacity:.2}40%{opacity:1}}
+
+/* COMPOSER */
+.composer{background:var(--s1);border-top:1px solid var(--brd);padding:10px 12px;flex-shrink:0;padding-bottom:max(10px,env(safe-area-inset-bottom))}
+#file-preview{display:none;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+.pv-item{position:relative;border-radius:8px;overflow:hidden;border:1px solid var(--brd)}
+.pv-item img{width:64px;height:64px;object-fit:cover;display:block}
+.pv-file-box{padding:7px 8px;background:var(--s2);min-width:80px;max-width:110px}
+.pv-fname{font-size:.68rem;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pv-fsize{font-size:.62rem;color:var(--txt3);font-family:var(--fm)}
+.pv-rm{position:absolute;top:3px;right:3px;background:rgba(0,0,0,.7);color:#fff;border:none;border-radius:50%;width:18px;height:18px;font-size:.6rem;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.composer-row{display:flex;align-items:flex-end;gap:8px}
+.att-btn{width:38px;height:38px;border-radius:50%;background:var(--s2);border:1px solid var(--brd);color:var(--txt2);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:1rem;flex-shrink:0;transition:background .15s}
+.att-btn:hover{background:var(--s3);color:var(--txt)}
+#compose-input{flex:1;background:var(--s2);border:1px solid var(--brd);border-radius:20px;padding:9px 14px;color:var(--txt);font-family:var(--fb);font-size:.9rem;resize:none;outline:none;max-height:100px;min-height:38px;line-height:1.4;overflow-y:auto;transition:border-color .2s}
+#compose-input:focus{border-color:var(--acc)}
+#compose-input::placeholder{color:var(--txt3)}
+.send-btn{width:38px;height:38px;border-radius:50%;background:var(--acc);border:none;color:#111;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:1rem;flex-shrink:0;transition:transform .1s}
+.send-btn:active{transform:scale(.95)}
+#fi-img{display:none}
+#fi-doc{display:none}
+.upload-warn{font-size:.7rem;color:var(--txt3);text-align:center;padding:4px 0;display:none;font-family:var(--fm)}
+
+/* ADMIN */
+#view-admin{padding:1.5rem;overflow-y:auto;gap:1.2rem}
+.admin-sec{background:var(--s1);border:1px solid var(--brd);border-radius:var(--r);padding:1.2rem;display:flex;flex-direction:column;gap:10px}
+.admin-sec h3{font-family:var(--fh);font-size:1rem;font-weight:700;color:var(--txt)}
+.u-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--brd)}
+.u-row:last-child{border-bottom:none}
+.role-badge{font-size:.63rem;font-family:var(--fm);padding:2px 8px;border-radius:10px;background:var(--s3);color:var(--txt2)}
+.role-badge.admin{background:rgba(212,168,67,.15);color:var(--acc)}
+.row-acts{margin-left:auto;display:flex;gap:5px}
+.btn-sm{background:transparent;color:var(--txt2);border:1px solid var(--brd);border-radius:8px;padding:4px 9px;font-size:.72rem;font-family:var(--fb);cursor:pointer;transition:background .15s}
+.btn-sm:hover{background:var(--s3);color:var(--txt)}
+.btn-sm.danger{color:#e07070;border-color:rgba(192,57,43,.3)}
+.btn-sm.danger:hover{background:rgba(192,57,43,.12)}
+
+/* SETTINGS VIEW */
+#view-settings{padding:1.5rem;overflow-y:auto;gap:1.2rem}
+.settings-sec{background:var(--s1);border:1px solid var(--brd);border-radius:var(--r);padding:1.2rem;display:flex;flex-direction:column;gap:12px}
+.settings-sec h3{font-family:var(--fh);font-size:1rem;font-weight:700;color:var(--txt)}
+.setting-row{display:flex;flex-direction:column;gap:6px}
+.setting-label{font-size:.72rem;color:var(--txt2);font-family:var(--fm);letter-spacing:.5px}
+
+/* MODAL */
+#modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:500;display:none;align-items:center;justify-content:center;padding:1rem;backdrop-filter:blur(4px)}
+#modal-overlay.open{display:flex}
+.modal{background:var(--s1);border:1px solid var(--brd2);border-radius:var(--rr);padding:1.5rem;width:100%;max-width:400px;display:flex;flex-direction:column;gap:14px;animation:mIn .2s ease}
+@keyframes mIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+.modal h2{font-family:var(--fh);font-size:1.2rem;font-weight:800;color:var(--txt)}
+.modal-acts{display:flex;gap:8px;justify-content:flex-end;margin-top:4px}
+.field-label{font-size:.72rem;color:var(--txt2);font-family:var(--fm);margin-bottom:4px;letter-spacing:.5px}
+.member-list{display:flex;flex-direction:column;gap:4px;max-height:200px;overflow-y:auto}
+.mem-item{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:8px;background:var(--s2);border:1px solid var(--brd)}
+.mem-item input[type=checkbox]{accent-color:var(--acc);width:16px;height:16px;cursor:pointer}
+.mem-item label{flex:1;font-size:.85rem;cursor:pointer;color:var(--txt)}
+.mem-item .mrole{font-size:.68rem;color:var(--txt3);font-family:var(--fm)}
+
+/* PANEL */
+#panel{width:0;background:var(--s1);border-left:1px solid var(--brd);display:flex;flex-direction:column;overflow:hidden;transition:width .25s ease;flex-shrink:0}
+#panel.open{width:260px}
+.panel-hdr{padding:14px 16px;border-bottom:1px solid var(--brd);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.panel-hdr h3{font-family:var(--fh);font-size:1rem;font-weight:700;color:var(--txt)}
+.panel-body{flex:1;overflow-y:auto;padding:12px 16px;display:flex;flex-direction:column;gap:12px}
+.panel-sec{display:flex;flex-direction:column;gap:8px}
+.panel-sec-title{font-size:.68rem;font-family:var(--fm);color:var(--txt3);letter-spacing:1px;text-transform:uppercase}
+.mem-entry{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--brd)}
+.mem-entry:last-child{border-bottom:none}
+.me-name{font-size:.85rem;color:var(--txt);flex:1}
+.me-role{font-size:.68rem;color:var(--txt3);font-family:var(--fm)}
+.kick-btn{background:none;border:none;color:var(--txt3);font-size:.85rem;cursor:pointer;padding:4px;border-radius:6px;transition:color .15s,background .15s}
+.kick-btn:hover{color:var(--red);background:rgba(192,57,43,.1)}
+
+/* IMAGE VIEWER */
+#img-viewer{position:fixed;inset:0;background:rgba(0,0,0,.93);z-index:600;display:none;align-items:center;justify-content:center;cursor:zoom-out}
+#img-viewer.open{display:flex}
+#img-viewer img{max-width:95vw;max-height:95vh;object-fit:contain;border-radius:8px}
+
+/* AVATAR */
+.avatar{width:32px;height:32px;border-radius:50%;background:var(--acc);color:#111;font-size:.7rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:var(--fh)}
+
+/* TOAST */
+#toast{position:fixed;bottom:76px;left:50%;transform:translateX(-50%) translateY(12px);background:var(--grn);color:#fff;padding:8px 18px;border-radius:20px;font-size:.82rem;opacity:0;transition:opacity .2s,transform .2s;pointer-events:none;z-index:999;white-space:nowrap}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+#toast.err{background:var(--red)}
+
+/* MOBILE */
+@media(max-width:600px){
+  #sidebar{position:fixed;bottom:0;left:0;right:0;width:100%!important;height:56px;flex-direction:row;border-right:none;border-top:1px solid var(--brd);padding:0;gap:0;z-index:50}
+  .sb-logo,.sb-section,.sb-divider,.sb-user,.sb-label{display:none!important}
+  .sb-badge{display:block!important}
+  .sb-btn{flex-direction:column;gap:2px;padding:5px 2px;border-radius:0;flex:1;align-items:center;justify-content:center}
+  .sb-label{display:block!important;opacity:1!important;font-size:.55rem;color:var(--txt3)}
+  .sb-btn.active .sb-label{color:var(--acc)}
+  #shell{flex-direction:column-reverse}
+  #main{height:calc(100dvh - 56px)}
+  #view-chat{padding-bottom:0}
+  #messages{padding-bottom:4px}
+  #view-chat .composer{position:relative;z-index:5}
+  #panel{position:fixed;inset:0;width:100%!important;z-index:100;transform:translateX(100%);transition:transform .25s ease}
+  #panel.open{transform:translateX(0)}
+  .msg-wrap{max-width:85%}
+}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-thumb{background:var(--brd2);border-radius:2px}
+</style>
+</head>
+<body>
+
+<!-- AUTH -->
+<div id="auth">
+  <div class="auth-logo" id="app-logo">Terrazzo Chat</div>
+  <div class="auth-sub" id="app-sub">TERRAZZOSPECIALISTEN</div>
+  <div class="auth-card">
+    <h2>Logga in</h2>
+    <select id="sel-user">
+      <option value="">Välj ditt namn...</option>
+      <option>Jesper</option><option>Ronny</option><option>Maria</option>
+      <option>Ian</option><option>Darren</option><option>Latif</option>
+      <option>Anders</option><option>Robin</option><option>Ola</option>
+      <option>Mahdi</option><option>Ervis</option><option>Mikael</option>
+    </select>
+    <input type="password" id="sel-pin" placeholder="PIN-kod (standard: 0000)" maxlength="4" inputmode="numeric"
+      onkeydown="if(event.key==='Enter') doLogin()">
+    <div class="err-msg" id="auth-err"></div>
+    <div class="status-msg" id="conn-status"></div>
+    <button class="btn" onclick="doLogin()">Logga in</button>
+  </div>
+</div>
+
+<!-- SHELL -->
+<div id="shell">
+  <div id="sidebar">
+    <div class="sb-logo" id="sb-logo-txt">TC</div>
+    <button class="sb-btn active" id="sb-home" onclick="showView('home')">
+      <span class="sb-icon">🏠</span><span class="sb-label">Hem</span>
+    </button>
+    <div class="sb-section">PROJEKT</div>
+    <div id="sb-projects"></div>
+    <div class="sb-divider"></div>
+    <button class="sb-btn" id="sb-admin" onclick="showView('admin')" style="display:none">
+      <span class="sb-icon">⚙️</span><span class="sb-label">Admin</span>
+    </button>
+    <button class="sb-btn" id="sb-settings" onclick="showView('settings')" style="display:none">
+      <span class="sb-icon">🎨</span><span class="sb-label">Inställningar</span>
+    </button>
+    <div class="sb-user">
+      <div class="conn-dot wait" id="conn-dot"></div>
+      <div class="sb-user-info">
+        <div class="sb-uname" id="sb-uname">–</div>
+        <div class="sb-urole" id="sb-urole">–</div>
+      </div>
+      <button class="logout-sb" onclick="doLogout()" title="Logga ut">↩</button>
+    </div>
+  </div>
+
+  <div id="main">
+    <!-- HOME -->
+    <div class="view active" id="view-home">
+      <div class="home-hdr" id="home-hdr">Hej!</div>
+      <div class="home-sub">Välj ett projekt eller skapa ett nytt</div>
+      <div class="home-grid" id="home-grid"></div>
+    </div>
+
+    <!-- CHAT -->
+    <div class="view" id="view-chat">
+      <div class="chat-hdr">
+        <button class="chat-back" onclick="showView('home')">‹</button>
+        <div class="chat-hdr-info">
+          <div class="chat-hdr-name" id="ch-name">–</div>
+          <div class="chat-hdr-sub" id="ch-sub">–</div>
+        </div>
+        <button class="icon-btn" onclick="togglePanel()">👥</button>
+      </div>
+      <div id="messages"></div>
+      <div class="typing-row" id="typing-row"></div>
+      <div class="composer">
+        <div id="file-preview"></div>
+        <div class="upload-warn" id="upload-warn">⚠ Bilder komprimeras automatiskt för snabb överföring</div>
+        <div class="composer-row">
+          <label class="att-btn" for="fi-img" title="Bild">📷</label>
+          <input type="file" id="fi-img" accept="image/*" multiple onchange="handleFiles(this,'img')">
+          <label class="att-btn" for="fi-doc" title="Fil">📎</label>
+          <input type="file" id="fi-doc" multiple onchange="handleFiles(this,'doc')">
+          <textarea id="compose-input" placeholder="Skriv ett meddelande..." rows="1"
+            oninput="autoResize(this);onTyping()"
+            onkeydown="composeKey(event)"></textarea>
+          <button class="send-btn" onclick="sendMsg()">➤</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ADMIN -->
+    <div class="view" id="view-admin">
+      <div style="font-family:var(--fh);font-size:1.5rem;font-weight:800;margin-bottom:.5rem">Administration</div>
+      <div class="admin-sec">
+        <h3>👥 Användare</h3>
+        <div id="admin-users"></div>
+      </div>
+      <div class="admin-sec">
+        <h3>📁 Projekt</h3>
+        <div id="admin-projects"></div>
+      </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="view" id="view-settings">
+      <div style="font-family:var(--fh);font-size:1.5rem;font-weight:800;margin-bottom:.5rem">Appinställningar</div>
+      <div class="settings-sec">
+        <h3>🎨 Utseende & namn</h3>
+        <div class="setting-row">
+          <div class="setting-label">APPNAMN</div>
+          <input type="text" id="set-appname" placeholder="Terrazzo Chat" maxlength="30">
+        </div>
+        <div class="setting-row">
+          <div class="setting-label">FÖRETAGSNAMN (visas under loggan)</div>
+          <input type="text" id="set-company" placeholder="TERRAZZOSPECIALISTEN" maxlength="40">
+        </div>
+        <div class="setting-row">
+          <div class="setting-label">ACCENTFÄRG (hex)</div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <input type="color" id="set-color" value="#d4a843" style="width:44px;height:36px;padding:2px;background:var(--s2);border:1px solid var(--brd);border-radius:8px;cursor:pointer">
+            <input type="text" id="set-color-hex" placeholder="#d4a843" maxlength="7" style="flex:1">
+          </div>
+        </div>
+        <button class="btn" onclick="saveSettings()">Spara inställningar</button>
+      </div>
+      <div class="settings-sec">
+        <h3>👥 Lägg till användare</h3>
+        <div class="setting-row">
+          <div class="setting-label">NAMN</div>
+          <input type="text" id="set-newuser" placeholder="Förnamn Efternamn" maxlength="30">
+        </div>
+        <button class="btn" onclick="addUser()" style="margin-top:4px">Lägg till användare</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PANEL -->
+  <div id="panel">
+    <div class="panel-hdr">
+      <h3 id="panel-title">Projektinfo</h3>
+      <button class="icon-btn" onclick="togglePanel()">✕</button>
+    </div>
+    <div class="panel-body" id="panel-body"></div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div id="modal-overlay">
+  <div class="modal" id="modal-content"></div>
+</div>
+
+<!-- IMAGE VIEWER -->
+<div id="img-viewer" onclick="closeImg()">
+  <img id="iv-img" src="" alt="">
+</div>
+
+<div id="toast"></div>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getDatabase, ref, set, push, onValue, off, update, remove, onDisconnect, serverTimestamp }
+  from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
+
+// ══════════════════════════════════════════════
+//  FIREBASE CONFIG — Terrazzospecialisten
+// ══════════════════════════════════════════════
+const firebaseConfig = {
+  apiKey: "AIzaSyDuhaeRJZnRa0dn_8KidlZZZ2mudLCfA20",
+  authDomain: "terrazzospecialisten-8127c.firebaseapp.com",
+  databaseURL: "https://terrazzospecialisten-8127c-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "terrazzospecialisten-8127c",
+  storageBucket: "terrazzospecialisten-8127c.firebasestorage.app",
+  messagingSenderId: "80969810531",
+  appId: "1:80969810531:web:5b541c11843ec8f34bee56"
+};
+
+const app = initializeApp(firebaseConfig);
+const db  = getDatabase(app);
+
+// ══════════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════════
+const DEFAULT_USERS = {
+  Jesper:{pin:'0000',role:'admin'},Ronny:{pin:'0000',role:'admin'},
+  Maria:{pin:'0000',role:'member'},Ian:{pin:'0000',role:'member'},
+  Darren:{pin:'0000',role:'member'},Latif:{pin:'0000',role:'member'},
+  Anders:{pin:'0000',role:'member'},Robin:{pin:'0000',role:'member'},
+  Ola:{pin:'0000',role:'member'},Mahdi:{pin:'0000',role:'member'},
+  Ervis:{pin:'0000',role:'member'},Mikael:{pin:'0000',role:'member'},
+};
+let userRoles = {...DEFAULT_USERS};
+let projects  = {};
+let appSettings = { name:'Terrazzo Chat', company:'TERRAZZOSPECIALISTEN', color:'#d4a843' };
+let currentUser   = null;
+let currentProjId = null;
+let pendingFiles  = [];
+let panelOpen     = false;
+let msgUnsubscribe = null;
+let typingTimer   = null;
+let readTimes     = {};
+
+// ══════════════════════════════════════════════
+//  BOOT
+// ══════════════════════════════════════════════
+// Listen to app settings
+onValue(ref(db,'settings'), snap=>{
+  if(snap.exists()){ Object.assign(appSettings, snap.val()); applySettings(); }
+});
+// Listen to user roles
+onValue(ref(db,'users'), snap=>{
+  if(snap.exists()) Object.assign(userRoles, snap.val());
+});
+
+const scu = sessionStorage.getItem('tc_user');
+if(scu && DEFAULT_USERS[scu]){ currentUser=scu; bootApp(); }
+
+function applySettings(){
+  document.title = appSettings.name;
+  document.getElementById('app-logo').textContent = appSettings.name;
+  document.getElementById('app-sub').textContent = appSettings.company;
+  document.getElementById('sb-logo-txt').textContent = appSettings.name.split(' ').map(w=>w[0]).join('').slice(0,3);
+  document.documentElement.style.setProperty('--acc', appSettings.color);
+  // update hex inputs if on settings page
+  const ci=document.getElementById('set-color'); if(ci) ci.value=appSettings.color;
+  const ch=document.getElementById('set-color-hex'); if(ch) ch.value=appSettings.color;
+  const an=document.getElementById('set-appname'); if(an) an.value=appSettings.name;
+  const co=document.getElementById('set-company'); if(co) co.value=appSettings.company;
+}
+
+// ══════════════════════════════════════════════
+//  AUTH
+// ══════════════════════════════════════════════
+window.doLogin = async function(){
+  const name = document.getElementById('sel-user').value;
+  const pin  = document.getElementById('sel-pin').value;
+  const errEl= document.getElementById('auth-err');
+  const stEl = document.getElementById('conn-status');
+  if(!name){ errEl.textContent='Välj ditt namn.'; return; }
+  const u = userRoles[name] || DEFAULT_USERS[name];
+  if(!u || pin !== (u.pin||'0000')){ errEl.textContent='Fel PIN. Standard är 0000.'; return; }
+  stEl.textContent='Ansluter...'; errEl.textContent='';
+  try{
+    currentUser = name;
+    sessionStorage.setItem('tc_user', name);
+    const presRef = ref(db, `presence/${name}`);
+    await set(presRef, {online:true, ts:Date.now()});
+    onDisconnect(presRef).set({online:false, ts:Date.now()});
+    setConnDot(true);
+    stEl.textContent='';
+    bootApp();
+  }catch(e){
+    stEl.textContent='';
+    errEl.textContent='Anslutningsfel. Kontrollera nätet och försök igen.';
+    currentUser=null; sessionStorage.removeItem('tc_user');
+  }
+};
+
+window.doLogout = function(){
+  if(currentUser) set(ref(db,`presence/${currentUser}`),{online:false,ts:Date.now()});
+  if(msgUnsubscribe){ msgUnsubscribe(); msgUnsubscribe=null; }
+  currentUser=null; currentProjId=null; pendingFiles=[];
+  sessionStorage.removeItem('tc_user');
+  document.getElementById('shell').style.display='none';
+  document.getElementById('auth').style.display='flex';
+  document.getElementById('sel-pin').value='';
+  document.getElementById('auth-err').textContent='';
+};
+
+function bootApp(){
+  document.getElementById('auth').style.display='none';
+  document.getElementById('shell').style.display='flex';
+  const role=(userRoles[currentUser]?.role||'member');
+  document.getElementById('sb-uname').textContent=currentUser;
+  document.getElementById('sb-urole').textContent=role==='admin'?'Admin':'Medlem';
+  document.getElementById('home-hdr').textContent=`Hej, ${currentUser}! 👋`;
+  document.getElementById('sb-admin').style.display=role==='admin'?'':'none';
+  document.getElementById('sb-settings').style.display=role==='admin'?'':'none';
+  listenProjects();
+  listenReads();
+  showView('home');
+}
+
+// ══════════════════════════════════════════════
+//  PROJECTS LISTENER
+// ══════════════════════════════════════════════
+function listenProjects(){
+  onValue(ref(db,'projects'), snap=>{
+    projects={};
+    if(snap.exists()) snap.forEach(c=>{ projects[c.key]={...c.val(), id:c.key}; });
+    renderSidebar();
+    if(document.getElementById('view-home').classList.contains('active')) renderHome();
+    if(document.getElementById('view-admin').classList.contains('active')) renderAdmin();
+    // kick check
+    if(currentProjId){
+      const p=projects[currentProjId];
+      if(p && !(p.members||[]).includes(currentUser)){
+        toast('Du har tagits bort från projektet','err');
+        showView('home');
+      } else if(p){
+        document.getElementById('ch-sub').textContent=`${(p.members||[]).length} medlemmar`;
+      }
+    }
+  });
+}
+
+function listenReads(){
+  onValue(ref(db,`reads/${currentUser}`), snap=>{
+    readTimes={}; if(snap.exists()) Object.assign(readTimes, snap.val());
+    updateBadges();
+  });
+}
+
+// ══════════════════════════════════════════════
+//  VIEWS
+// ══════════════════════════════════════════════
+window.showView = function(v){
+  document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
+  document.getElementById('view-'+v).classList.add('active');
+  document.querySelectorAll('.sb-btn').forEach(b=>b.classList.remove('active'));
+  if(v==='home'){ document.getElementById('sb-home').classList.add('active'); renderHome(); }
+  if(v==='admin'){ document.getElementById('sb-admin').classList.add('active'); renderAdmin(); }
+  if(v==='settings'){ document.getElementById('sb-settings').classList.add('active'); applySettings(); }
+  if(v!=='chat'){
+    currentProjId=null;
+    if(msgUnsubscribe){ msgUnsubscribe(); msgUnsubscribe=null; }
+    if(panelOpen) togglePanel();
+  }
+};
+
+window.openProject = function(id){
+  const p=projects[id];
+  if(!p){ toast('Projekt hittades inte','err'); return; }
+  if(!(p.members||[]).includes(currentUser)){ toast('Du har inte tillgång','err'); return; }
+  if(msgUnsubscribe){ msgUnsubscribe(); msgUnsubscribe=null; }
+  currentProjId=id;
+  document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
+  document.getElementById('view-chat').classList.add('active');
+  document.querySelectorAll('.sb-btn').forEach(b=>b.classList.remove('active'));
+  const sb=document.getElementById('sb-proj-'+id); if(sb) sb.classList.add('active');
+  document.getElementById('ch-name').textContent=`${p.icon||'💬'} ${p.name}`;
+  document.getElementById('ch-sub').textContent=`${(p.members||[]).length} medlemmar`;
+  markRead(id);
+  listenMessages(id);
+  listenTyping(id);
+};
+
+// ══════════════════════════════════════════════
+//  MESSAGES
+// ══════════════════════════════════════════════
+function listenMessages(pid){
+  const msgRef=ref(db,`projects/${pid}/messages`);
+  const unsub=onValue(msgRef, snap=>{
+    const msgs=[];
+    if(snap.exists()) snap.forEach(c=>msgs.push({id:c.key,...c.val()}));
+    renderMessages(msgs);
+    markRead(pid);
+  });
+  msgUnsubscribe=()=>off(msgRef);
+}
+
+function renderMessages(msgs){
+  const cont=document.getElementById('messages');
+  if(!msgs||!msgs.length){
+    cont.innerHTML='<div style="flex:1;display:flex;align-items:center;justify-content:center;color:var(--txt3);font-size:.85rem;padding:2rem;text-align:center">Inga meddelanden ännu. Säg hej! 👋</div>';
+    return;
+  }
+  const wasBottom=cont.scrollHeight-cont.scrollTop-cont.clientHeight<100;
+  let html='',lastDate='',lastAuthor='',lastTs=0;
+  msgs.forEach((m,i)=>{
+    const d=fmtDate(m.ts);
+    if(d!==lastDate){ html+=`<div class="msg-date-sep">${d}</div>`; lastDate=d; lastAuthor=''; }
+    if(m.type==='system'){ html+=`<div class="sys-msg">${escHtml(m.text||'')}</div>`; lastAuthor=''; lastTs=m.ts; return; }
+    const own=m.author===currentUser;
+    const sameAuth=m.author===lastAuthor&&(m.ts-lastTs)<300000;
+    const next=msgs[i+1];
+    const isLast=!next||next.author!==m.author||(next.ts-m.ts)>=300000||next.type==='system';
+    html+=`<div class="msg-row ${own?'own':''}">
+      <div class="msg-av${sameAuth?' hidden':''}">${initials(m.author)}</div>
+      <div class="msg-wrap">
+        ${!sameAuth&&!own?`<div class="msg-sender-name">${m.author}</div>`:''}
+        <div class="msg-bubble">
+          ${m.text?escHtml(m.text):''}
+          ${renderAtts(m.attachments||[])}
+        </div>
+        ${isLast?`<div class="msg-time">${fmtTime(m.ts)}</div>`:''}
+      </div>
+    </div>`;
+    lastAuthor=m.author; lastTs=m.ts;
+  });
+  const prev=cont.scrollTop;
+  cont.innerHTML=html;
+  cont.querySelectorAll('.msg-bubble img').forEach(img=>img.onclick=()=>openImg(img.src));
+  if(wasBottom) cont.scrollTop=cont.scrollHeight;
+  else cont.scrollTop=prev;
+}
+
+function renderAtts(atts){
+  return atts.map(a=>{
+    if(a.type==='img') return `<img src="${a.data}" alt="${escHtml(a.name)}" loading="lazy">`;
+    return `<div class="msg-file" onclick="dlFile('${escHtml(a.name)}','${a.data}')">
+      <span style="font-size:1.1rem">${fileIcon(a.name)}</span>
+      <div><div class="msg-fname">${escHtml(a.name)}</div><div class="msg-fsize">${a.size||''}</div></div>
+      <span style="margin-left:auto;font-size:.8rem;opacity:.5">⬇</span>
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════════
+//  SEND
+// ══════════════════════════════════════════════
+window.sendMsg = async function(){
+  if(!currentProjId) return;
+  const inp=document.getElementById('compose-input');
+  const text=inp.value.trim();
+  if(!text&&!pendingFiles.length) return;
+  inp.value=''; inp.style.height='auto';
+  const files=[...pendingFiles]; pendingFiles=[];
+  document.getElementById('file-preview').innerHTML='';
+  document.getElementById('file-preview').style.display='none';
+  document.getElementById('upload-warn').style.display='none';
+
+  const attachments=files.map(f=>({name:f.name,type:f.ptype,data:f.data,size:f.size}));
+  await push(ref(db,`projects/${currentProjId}/messages`),{
+    author:currentUser, text, attachments, ts:Date.now(), type:'msg'
+  });
+  await update(ref(db,`projects/${currentProjId}`),{lastMsg:Date.now()});
+  set(ref(db,`typing/${currentProjId}/${currentUser}`),false);
+};
+
+window.composeKey=function(e){ if(e.key==='Enter'&&!e.shiftKey&&window.innerWidth>600){ e.preventDefault(); sendMsg(); } };
+
+// ══════════════════════════════════════════════
+//  TYPING
+// ══════════════════════════════════════════════
+window.onTyping=function(){
+  if(!currentProjId) return;
+  set(ref(db,`typing/${currentProjId}/${currentUser}`),true);
+  clearTimeout(typingTimer);
+  typingTimer=setTimeout(()=>set(ref(db,`typing/${currentProjId}/${currentUser}`),false),3000);
+};
+function listenTyping(pid){
+  onValue(ref(db,`typing/${pid}`),snap=>{
+    const who=[];
+    if(snap.exists()) snap.forEach(c=>{ if(c.val()===true&&c.key!==currentUser) who.push(c.key); });
+    const row=document.getElementById('typing-row');
+    if(who.length) row.innerHTML=`<div class="dots"><span></span><span></span><span></span></div>&nbsp;<span>${who.join(', ')} skriver...</span>`;
+    else row.innerHTML='';
+  });
+}
+
+// ══════════════════════════════════════════════
+//  FILES (base64, compress images)
+// ══════════════════════════════════════════════
+window.handleFiles=function(input,ptype){
+  Array.from(input.files).forEach(file=>{
+    if(ptype==='img'){
+      compressImage(file, data=>{
+        pendingFiles.push({name:file.name,ptype,data,size:fmtSize(file.size)});
+        renderPreviews();
+      });
+    } else {
+      const reader=new FileReader();
+      reader.onload=e=>{ pendingFiles.push({name:file.name,ptype,data:e.target.result,size:fmtSize(file.size)}); renderPreviews(); };
+      reader.readAsDataURL(file);
+    }
+  });
+  input.value='';
+  document.getElementById('upload-warn').style.display='block';
+};
+
+function compressImage(file, cb){
+  const reader=new FileReader();
+  reader.onload=e=>{
+    const img=new Image();
+    img.onload=()=>{
+      const MAX=800;
+      let {width:w,height:h}=img;
+      if(w>MAX||h>MAX){ if(w>h){h=Math.round(h*MAX/w);w=MAX;}else{w=Math.round(w*MAX/h);h=MAX;} }
+      const canvas=document.createElement('canvas');
+      canvas.width=w; canvas.height=h;
+      canvas.getContext('2d').drawImage(img,0,0,w,h);
+      cb(canvas.toDataURL('image/jpeg',0.72));
+    };
+    img.src=e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function renderPreviews(){
+  const wrap=document.getElementById('file-preview');
+  wrap.style.display=pendingFiles.length?'flex':'none';
+  wrap.innerHTML=pendingFiles.map((f,i)=>{
+    if(f.ptype==='img') return `<div class="pv-item"><img src="${f.data}" alt=""><button class="pv-rm" onclick="rmPending(${i})">✕</button></div>`;
+    return `<div class="pv-item"><div class="pv-file-box"><div class="pv-fname">${escHtml(f.name)}</div><div class="pv-fsize">${f.size}</div></div><button class="pv-rm" onclick="rmPending(${i})">✕</button></div>`;
+  }).join('');
+}
+window.rmPending=function(i){ pendingFiles.splice(i,1); renderPreviews(); };
+window.dlFile=function(name,data){ const a=document.createElement('a'); a.href=data; a.download=name; a.click(); };
+
+// ══════════════════════════════════════════════
+//  UNREAD / READ
+// ══════════════════════════════════════════════
+function markRead(pid){ set(ref(db,`reads/${currentUser}/${pid}`),Date.now()); }
+function getUnread(pid){
+  const p=projects[pid]; if(!p||!p.lastMsg) return 0;
+  return p.lastMsg>(readTimes[pid]||0) ? 1 : 0;
+}
+function updateBadges(){
+  Object.keys(projects).forEach(pid=>{
+    const b=document.getElementById('badge-'+pid); if(!b) return;
+    const n=getUnread(pid);
+    b.textContent=n?'●':''; b.classList.toggle('show',n>0);
+  });
+}
+
+// ══════════════════════════════════════════════
+//  HOME
+// ══════════════════════════════════════════════
+function renderHome(){
+  const grid=document.getElementById('home-grid');
+  const myProjs=Object.values(projects).filter(p=>(p.members||[]).includes(currentUser));
+  const isAdmin=(userRoles[currentUser]?.role||'member')==='admin';
+  let html=myProjs.map(p=>{
+    const n=getUnread(p.id);
+    return `<div class="proj-card" onclick="openProject('${p.id}')">
+      <div class="proj-icon">${p.icon||'💬'}</div>
+      <div class="proj-name">${p.name}</div>
+      <div class="proj-meta">${(p.members||[]).length} med</div>
+      ${n?`<div class="unread-dot">Nytt</div>`:''}
+    </div>`;
+  }).join('');
+  if(isAdmin) html+=`<div class="new-proj-card" onclick="openNewProjectModal()"><div style="font-size:1.5rem">＋</div><div>Nytt projekt</div></div>`;
+  grid.innerHTML=html;
+}
+
+// ══════════════════════════════════════════════
+//  SIDEBAR
+// ══════════════════════════════════════════════
+function renderSidebar(){
+  document.getElementById('sb-projects').innerHTML=Object.values(projects)
+    .filter(p=>(p.members||[]).includes(currentUser))
+    .map(p=>{
+      const n=getUnread(p.id);
+      return `<button class="sb-btn" id="sb-proj-${p.id}" onclick="openProject('${p.id}')">
+        <span class="sb-icon">${p.icon||'💬'}</span>
+        <span class="sb-label">${p.name}</span>
+        <span class="sb-badge ${n?'show':''}" id="badge-${p.id}">${n?'●':''}</span>
+      </button>`;
+    }).join('');
+}
+
+// ══════════════════════════════════════════════
+//  PANEL
+// ══════════════════════════════════════════════
+window.togglePanel=function(){
+  panelOpen=!panelOpen;
+  document.getElementById('panel').classList.toggle('open',panelOpen);
+  if(panelOpen) renderPanel();
+};
+function renderPanel(){
+  const p=projects[currentProjId]; if(!p) return;
+  document.getElementById('panel-title').textContent=p.name;
+  const canManage=p.creator===currentUser||(userRoles[currentUser]?.role||'member')==='admin';
+  let html=`<div class="panel-sec">
+    <div class="panel-sec-title">Skapad av</div>
+    <div style="font-size:.85rem;color:var(--txt2)">${p.creator}</div>
+  </div>
+  <div class="panel-sec">
+    <div class="panel-sec-title">Medlemmar (${(p.members||[]).length})</div>`;
+  html+=(p.members||[]).map(m=>`<div class="mem-entry">
+    <div class="avatar" style="width:26px;height:26px;font-size:.6rem">${initials(m)}</div>
+    <div style="flex:1"><div class="me-name">${m}</div><div class="me-role">${userRoles[m]?.role||'member'}</div></div>
+    ${canManage&&m!==currentUser&&m!==p.creator?`<button class="kick-btn" onclick="kickMember('${p.id}','${m}')">✕</button>`:''}
+  </div>`).join('');
+  html+='</div>';
+  if(canManage){
+    html+=`<button class="btn-ghost" style="width:100%;margin-top:4px" onclick="openAddMemberModal('${p.id}')">+ Lägg till</button>`;
+    html+=`<button class="btn-sm danger" style="width:100%;margin-top:6px;padding:8px" onclick="confirmDeleteProject('${p.id}')">Ta bort projekt</button>`;
+  }
+  document.getElementById('panel-body').innerHTML=html;
+}
+
+// ══════════════════════════════════════════════
+//  PROJECT MGMT
+// ══════════════════════════════════════════════
+window.openNewProjectModal=function(){
+  const allUsers=[...Object.keys(userRoles),...Object.keys(DEFAULT_USERS)].filter((v,i,a)=>a.indexOf(v)===i);
+  const checks=allUsers.map(u=>`<div class="mem-item">
+    <input type="checkbox" id="nm-${u}" value="${u}" ${u===currentUser?'checked disabled':''}>
+    <label for="nm-${u}">${u}</label>
+    <span class="mrole">${(userRoles[u]?.role||'member')==='admin'?'Admin':'Medl.'}</span>
+  </div>`).join('');
+  showModal(`<h2>Nytt projekt</h2>
+    <div><div class="field-label">PROJEKTNAMN</div><input type="text" id="np-name" placeholder="T.ex. Station Hagastaden" maxlength="40"></div>
+    <div><div class="field-label">IKON (emoji)</div><input type="text" id="np-icon" value="📁" maxlength="2" style="width:72px"></div>
+    <div><div class="field-label">VÄLJ MEDLEMMAR</div><div class="member-list">${checks}</div></div>
+    <div class="modal-acts">
+      <button class="btn-ghost" onclick="closeModal()">Avbryt</button>
+      <button class="btn" style="width:auto;padding:10px 20px" onclick="createProject()">Skapa</button>
+    </div>`);
+};
+
+window.createProject=async function(){
+  const name=document.getElementById('np-name').value.trim();
+  const icon=document.getElementById('np-icon').value.trim()||'📁';
+  if(!name){ toast('Ange ett projektnamn','err'); return; }
+  const members=Array.from(document.querySelectorAll('.member-list input:checked')).map(c=>c.value);
+  if(!members.includes(currentUser)) members.push(currentUser);
+  const r=push(ref(db,'projects'));
+  await set(r,{name,icon,creator:currentUser,members,createdAt:Date.now(),lastMsg:Date.now()});
+  await push(ref(db,`projects/${r.key}/messages`),{author:'System',text:`${currentUser} skapade "${name}". Välkommen! 🎉`,ts:Date.now(),type:'system'});
+  closeModal(); toast('Projekt skapat!'); openProject(r.key);
+};
+
+window.openAddMemberModal=function(pid){
+  const p=projects[pid]; if(!p) return;
+  const allUsers=[...Object.keys(userRoles),...Object.keys(DEFAULT_USERS)].filter((v,i,a)=>a.indexOf(v)===i);
+  const nonMembers=allUsers.filter(u=>!(p.members||[]).includes(u));
+  if(!nonMembers.length){ toast('Alla är redan med'); return; }
+  const checks=nonMembers.map(u=>`<div class="mem-item">
+    <input type="checkbox" id="am-${u}" value="${u}">
+    <label for="am-${u}">${u}</label>
+  </div>`).join('');
+  showModal(`<h2>Lägg till</h2>
+    <div class="member-list">${checks}</div>
+    <div class="modal-acts">
+      <button class="btn-ghost" onclick="closeModal()">Avbryt</button>
+      <button class="btn" style="width:auto;padding:10px 20px" onclick="addMembers('${pid}')">Lägg till</button>
+    </div>`);
+};
+
+window.addMembers=async function(pid){
+  const toAdd=Array.from(document.querySelectorAll('.member-list input:checked')).map(c=>c.value);
+  if(!toAdd.length){ toast('Välj minst en','err'); return; }
+  const p=projects[pid]; if(!p) return;
+  const members=[...(p.members||[]),...toAdd.filter(u=>!(p.members||[]).includes(u))];
+  await update(ref(db,`projects/${pid}`),{members});
+  await push(ref(db,`projects/${pid}/messages`),{author:'System',text:`${toAdd.join(', ')} lades till.`,ts:Date.now(),type:'system'});
+  closeModal(); renderPanel(); toast(`${toAdd.length} tillagda`);
+};
+
+window.kickMember=async function(pid,user){
+  if(!confirm(`Ta bort ${user} från projektet?`)) return;
+  const p=projects[pid]; if(!p) return;
+  await update(ref(db,`projects/${pid}`),{members:(p.members||[]).filter(m=>m!==user)});
+  await push(ref(db,`projects/${pid}/messages`),{author:'System',text:`${user} togs bort.`,ts:Date.now(),type:'system'});
+  renderPanel(); toast(`${user} togs bort`);
+};
+
+window.confirmDeleteProject=async function(pid){
+  const p=projects[pid]; if(!p) return;
+  if(!confirm(`Ta bort projektet "${p.name}"? Allt försvinner.`)) return;
+  await remove(ref(db,`projects/${pid}`));
+  if(panelOpen) togglePanel();
+  showView('home'); toast('Projektet togs bort');
+};
+
+// ══════════════════════════════════════════════
+//  ADMIN
+// ══════════════════════════════════════════════
+function renderAdmin(){
+  const allUsers=[...Object.keys(userRoles),...Object.keys(DEFAULT_USERS)].filter((v,i,a)=>a.indexOf(v)===i);
+  document.getElementById('admin-users').innerHTML=allUsers.map(name=>{
+    const u=userRoles[name]||DEFAULT_USERS[name]||{role:'member'};
+    return `<div class="u-row">
+      <div class="avatar" style="width:28px;height:28px;font-size:.6rem">${initials(name)}</div>
+      <div style="flex:1;font-size:.85rem">${name}</div>
+      <span class="role-badge ${u.role==='admin'?'admin':''}">${u.role==='admin'?'Admin':'Medl.'}</span>
+      <div class="row-acts">
+        ${name!==currentUser?`<button class="btn-sm" onclick="toggleRole('${name}')">${u.role==='admin'?'→Medl.':'→Admin'}</button>`:''}
+        <button class="btn-sm" onclick="resetPin('${name}')">PIN</button>
+      </div>
+    </div>`;
+  }).join('');
+  document.getElementById('admin-projects').innerHTML=Object.values(projects).map(p=>`
+    <div class="u-row">
+      <span style="font-size:1.1rem">${p.icon||'💬'}</span>
+      <div style="flex:1;font-size:.85rem">${p.name}</div>
+      <span style="font-size:.7rem;color:var(--txt3);font-family:var(--fm)">${(p.members||[]).length} med</span>
+      <button class="btn-sm danger" style="margin-left:8px" onclick="confirmDeleteProject('${p.id}')">Ta bort</button>
+    </div>`).join('');
+}
+
+window.toggleRole=async function(name){
+  const cur=userRoles[name]?.role||'member';
+  const next=cur==='admin'?'member':'admin';
+  await update(ref(db,`users/${name}`),{role:next,pin:userRoles[name]?.pin||'0000'});
+  userRoles[name]={...userRoles[name],role:next};
+  renderAdmin(); toast(`${name} är nu ${next==='admin'?'Admin':'Medl.'}`);
+};
+
+window.resetPin=function(name){
+  showModal(`<h2>Ny PIN för ${name}</h2>
+    <div class="field-label">NY PIN (4 SIFFROR)</div>
+    <input type="password" id="new-pin" placeholder="0000" maxlength="4" inputmode="numeric">
+    <div class="modal-acts">
+      <button class="btn-ghost" onclick="closeModal()">Avbryt</button>
+      <button class="btn" style="width:auto;padding:10px 20px" onclick="savePin('${name}')">Spara</button>
+    </div>`);
+};
+window.savePin=async function(name){
+  const pin=document.getElementById('new-pin').value;
+  if(pin.length!==4||isNaN(pin)){ toast('Ange exakt 4 siffror','err'); return; }
+  await update(ref(db,`users/${name}`),{pin,role:userRoles[name]?.role||'member'});
+  userRoles[name]={...userRoles[name],pin};
+  closeModal(); toast(`PIN för ${name} uppdaterad`);
+};
+
+// ══════════════════════════════════════════════
+//  SETTINGS
+// ══════════════════════════════════════════════
+document.getElementById('set-color')?.addEventListener('input',function(){ document.getElementById('set-color-hex').value=this.value; });
+document.getElementById('set-color-hex')?.addEventListener('input',function(){ if(/^#[0-9a-f]{6}$/i.test(this.value)) document.getElementById('set-color').value=this.value; });
+
+window.saveSettings=async function(){
+  const name=document.getElementById('set-appname').value.trim()||'Terrazzo Chat';
+  const company=document.getElementById('set-company').value.trim()||'TERRAZZOSPECIALISTEN';
+  const color=document.getElementById('set-color').value||'#d4a843';
+  await set(ref(db,'settings'),{name,company,color});
+  toast('Inställningar sparade!');
+};
+
+window.addUser=async function(){
+  const name=document.getElementById('set-newuser').value.trim();
+  if(!name){ toast('Ange ett namn','err'); return; }
+  await set(ref(db,`users/${name}`),{role:'member',pin:'0000'});
+  userRoles[name]={role:'member',pin:'0000'};
+  // Add to select
+  const sel=document.getElementById('sel-user');
+  if(![...sel.options].find(o=>o.value===name)){
+    const opt=document.createElement('option'); opt.value=name; opt.textContent=name; sel.appendChild(opt);
+  }
+  document.getElementById('set-newuser').value='';
+  toast(`${name} tillagd med PIN 0000`);
+};
+
+// ══════════════════════════════════════════════
+//  MODAL / IMG / HELPERS
+// ══════════════════════════════════════════════
+window.showModal=function(html){ document.getElementById('modal-content').innerHTML=html; document.getElementById('modal-overlay').classList.add('open'); };
+window.closeModal=function(){ document.getElementById('modal-overlay').classList.remove('open'); };
+document.getElementById('modal-overlay').addEventListener('click',e=>{ if(e.target===document.getElementById('modal-overlay')) closeModal(); });
+window.openImg=function(src){ document.getElementById('iv-img').src=src; document.getElementById('img-viewer').classList.add('open'); };
+window.closeImg=function(){ document.getElementById('img-viewer').classList.remove('open'); };
+window.autoResize=function(el){ el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,100)+'px'; };
+
+function setConnDot(on){ const d=document.getElementById('conn-dot'); if(d){ d.classList.toggle('off',!on); d.classList.remove('wait'); } }
+function initials(n){ return n?n.slice(0,2).toUpperCase():'?'; }
+function escHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function fmtDate(ts){ const d=new Date(ts),n=new Date(); if(d.toDateString()===n.toDateString()) return 'Idag'; const y=new Date(n); y.setDate(y.getDate()-1); if(d.toDateString()===y.toDateString()) return 'Igår'; return d.toLocaleDateString('sv-SE',{day:'numeric',month:'long'}); }
+function fmtTime(ts){ return new Date(ts).toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit'}); }
+function fmtSize(b){ if(b<1024) return b+'B'; if(b<1048576) return (b/1024).toFixed(1)+'KB'; return (b/1048576).toFixed(1)+'MB'; }
+function fileIcon(n){ const e=n.split('.').pop().toLowerCase(); return {pdf:'📄',doc:'📝',docx:'📝',xls:'📊',xlsx:'📊',ppt:'📋',pptx:'📋',zip:'🗜️',mp4:'🎬',mp3:'🎵'}[e]||'📁'; }
+window.toast=function(msg,type=''){ const t=document.getElementById('toast'); t.textContent=msg; t.className=type?'show err':'show'; setTimeout(()=>t.className='',2500); };
+
+// Sidebar hover desktop
+const sb=document.getElementById('sidebar');
+if(window.innerWidth>600){ let ht; sb.addEventListener('mouseenter',()=>{ht=setTimeout(()=>sb.classList.add('open'),200)}); sb.addEventListener('mouseleave',()=>{clearTimeout(ht);sb.classList.remove('open')}); }
+
+// Seed default projects once
+async function seedIfEmpty(){
+  const snap=await new Promise(res=>onValue(ref(db,'projects'),res,{onlyOnce:true}));
+  if(snap.exists()) return;
+  const defaults=[
+    {name:'Allmänt',icon:'💬',creator:'Jesper',members:Object.keys(DEFAULT_USERS)},
+    {name:'Jobb & Projekt',icon:'🏗️',creator:'Jesper',members:['Jesper','Ronny','Maria','Ian']},
+  ];
+  for(const p of defaults){
+    const r=push(ref(db,'projects'));
+    await set(r,{...p,createdAt:Date.now(),lastMsg:Date.now()});
+    await push(ref(db,`projects/${r.key}/messages`),{author:'System',text:`Välkommen till ${p.name}! 🎉`,ts:Date.now(),type:'system'});
+  }
+}
+seedIfEmpty();
+</script>
+</body>
+</html>
